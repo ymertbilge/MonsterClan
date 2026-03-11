@@ -41,6 +41,9 @@ void ATimeManager::Tick(float DeltaTime)
             AdvanceTime();
         }
     }
+
+    // Update sun position every frame for smooth lerp effect
+    UpdateSunPosition();
 }
 
 void ATimeManager::SetTimeSpeed(ETimeSpeed NewSpeed)
@@ -111,7 +114,6 @@ void ATimeManager::AdvanceTime()
     }
 
     OnTimeChanged.Broadcast(CurrentDateTime);
-    UpdateSunPosition();
     CheckEvents();
 }
 
@@ -120,8 +122,11 @@ void ATimeManager::UpdateSunPosition()
     if (!SunLight)
         return;
 
-    // Calculate sun angle based on total minutes of the day (0-1440 minutes)
-    float TotalMinutes = (CurrentDateTime.Hour * 60.0f) + CurrentDateTime.Minute;
+    // Calculate fractional minute (0.0 - 1.0) based on accumulated seconds
+    float MinuteFraction = FMath::Clamp(MinuteAccumulator / RealSecondsPerGameMinute, 0.0f, 1.0f);
+
+    // Calculate sun angle based on total minutes of the day (0-1440 minutes) including the fractional part
+    float TotalMinutes = (CurrentDateTime.Hour * 60.0f) + CurrentDateTime.Minute + MinuteFraction;
     
     // 00:00 -> -90 degrees (midnight)
     // 06:00 -> 0 degrees (sunrise)
